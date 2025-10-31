@@ -138,13 +138,10 @@ export default function RootLayout({
   let originalContent = null;
   let isEditing = false;
   let elementTypeLabel = null;
-  let selectedCategoryLabel = null;
   let hoverOverlay = null;
   let scrollTimeout = null;
   let isScrolling = false;
 
-  const textElements = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span', 'a', 'li', 'label', 'div'];
-  const buttonElements = ['button', 'a', 'div', 'span'];
   const invalidElements = ['html', 'body', 'script', 'style', 'meta', 'link', 'head', 'noscript', 'title'];
   const hoverClass = 'webild-hover';
   const selectedClass = 'webild-selected';
@@ -153,58 +150,52 @@ export default function RootLayout({
   style.id = 'webild-inspector-styles';
   style.textContent = '' +
     '.webild-hover {' +
-    '  outline: 2px dashed rgba(59, 130, 246, 0.7) !important;' +
+    '  outline: 2px dashed #4d96ff80 !important;' +
+    '  border-radius: 0 !important;' +
     '  outline-offset: 2px !important;' +
     '  cursor: pointer !important;' +
     '  transition: outline 0.15s ease !important;' +
+    '  background-color: #4d96ff05 !important;' +
     '}' +
     '.webild-selected {' +
-    '  outline: 2px solid rgba(59, 130, 246, 1) !important;' +
+    '  outline: 2px solid #4d96ff !important;' +
     '  outline-offset: 2px !important;' +
     '  transition: outline 0.15s ease !important;' +
+    '  background-color: #4d96ff05 !important;' +
+    '  border-radius: 0 !important;' +
     '}' +
     '[contenteditable="true"].webild-selected {' +
-    '  outline: 2px solid rgba(59, 130, 246, 1) !important;' +
-    '  background-color: rgba(59, 130, 246, 0.05) !important;' +
+    '  outline: 2px solid #4d96ff !important;' +
+    '  background-color: #4d96ff05 !important;' +
+    '}' +
+    'img.webild-hover,' +
+    'img.webild-selected {' +
+    '  outline-offset: 2px !important;' +
     '}' +
     '.webild-element-type-label {' +
-    '  position: fixed;' +
-    '  z-index: 999999;' +
-    '  background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(37, 99, 235, 0.95));' +
-    '  color: white;' +
-    '  padding: 6px 12px;' +
-    '  border-radius: 6px;' +
-    '  font-size: 12px;' +
-    '  font-weight: 600;' +
-    '  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;' +
-    '  pointer-events: none;' +
-    '  white-space: nowrap;' +
-    '  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);' +
-    '  letter-spacing: 0.3px;' +
+    '  position: fixed !important;' +
+    '  z-index: 999999 !important;' +
+    '  background: #4d96ff !important;' +
+    '  color: white !important;' +
+    '  padding: 4px 8px !important;' +
+    '  font-size: 11px !important;' +
+    '  font-weight: 600 !important;' +
+    '  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;' +
+    '  pointer-events: none !important;' +
+    '  white-space: nowrap !important;' +
+    '  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;' +
+    '  letter-spacing: 0.3px !important;' +
+    '  border: 1px solid #4d96ff20 !important;' +
     '}' +
-    '.webild-selected-category-label {' +
-    '  position: fixed;' +
-    '  top: 16px;' +
-    '  left: 50%;' +
-    '  transform: translateX(-50%);' +
-    '  z-index: 999998;' +
-    '  background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(37, 99, 235, 0.95));' +
-    '  color: white;' +
-    '  padding: 10px 20px;' +
-    '  border-radius: 8px;' +
-    '  font-size: 14px;' +
-    '  font-weight: 700;' +
-    '  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;' +
-    '  pointer-events: none;' +
-    '  white-space: nowrap;' +
-    '  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);' +
-    '  letter-spacing: 0.5px;' +
-    '  text-transform: uppercase;' +
+    '.webild-element-type-label.label-top {' +
+    '  border-radius: 6px 6px 0 0 !important;' +
+    '}' +
+    '.webild-element-type-label.label-bottom {' +
+    '  border-radius: 0 0 6px 6px !important;' +
     '}' +
     '.webild-hover-overlay {' +
     '  position: fixed !important;' +
-    '  background-color: rgba(59, 130, 246, 0.15) !important;' +
-    '  border-radius: 4px !important;' +
+    '  background-color: #4d96ff15 !important;' +
     '  pointer-events: none !important;' +
     '  z-index: 999998 !important;' +
     '  transition: all 0.15s ease !important;' +
@@ -213,19 +204,16 @@ export default function RootLayout({
   
   const getUniqueSelector = (element, assignId = false) => {
     if (element.dataset && element.dataset.webildSelector) {
-      console.log('[Webild] Using stored selector from dataset:', element.dataset.webildSelector);
       return element.dataset.webildSelector;
     }
     
     const existingId = element.getAttribute('data-webild-id');
     if (existingId) {
-      console.log('[Webild] Reusing existing ID:', existingId);
       return '[data-webild-id="' + existingId + '"]';
     }
     
     if (assignId) {
       const uniqueId = 'webild-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-      console.log('[Webild] Generated new ID for element:', uniqueId, element);
       element.setAttribute('data-webild-id', uniqueId);
       return '[data-webild-id="' + uniqueId + '"]';
     }
@@ -246,35 +234,30 @@ export default function RootLayout({
   };
   
   const getElementType = (element) => {
-    const tagName = element.tagName.toLowerCase();
-    const computedStyle = window.getComputedStyle(element);
+  const tagName = element.tagName.toLowerCase();
+  const computedStyle = window.getComputedStyle(element);
 
-    const sectionId = element.getAttribute('data-section');
-    if (sectionId) {
-      return sectionId.charAt(0).toUpperCase() + sectionId.slice(1);
-    }
+  if (tagName === 'img') {
+    return 'Image';
+  }
 
-    if (tagName === 'img') return 'Image';
-
-    const backgroundImage = computedStyle.backgroundImage;
-    if (backgroundImage && backgroundImage !== 'none') {
-      const urlMatch = backgroundImage.match(/url\(['"]?([^'")]+)['"]?\)/);
-      if (urlMatch) {
+  const backgroundImage = computedStyle.backgroundImage;
+  if (backgroundImage && backgroundImage !== 'none') {
+    const urlMatch = backgroundImage.match(/url(['"]?([^'")]+)['"]?)/);
+    if (urlMatch && urlMatch[1] && !urlMatch[1].includes('gradient')) {
+      const area = element.offsetWidth * element.offsetHeight;
+      const hasReasonableSize = area > 1000;
+      const hasFewChildren = element.children.length <= 2;
+      
+      if (hasReasonableSize && hasFewChildren) {
         return 'Image';
       }
     }
+  }
 
-    if (tagName === 'button') {
-      return 'Button';
-    }
-
-    if (tagName === 'a' && element.getAttribute('href')) {
-      return 'Button';
-    }
-
-    if (element.getAttribute('role') === 'button') {
-      return 'Button';
-    }
+    if (tagName === 'button') return 'Button';
+    if (tagName === 'a' && element.getAttribute('href')) return 'Button';
+    if (element.getAttribute('role') === 'button') return 'Button';
 
     const buttonClasses = ['btn', 'button', 'cta', 'action-button'];
     const hasButtonClass = buttonClasses.some(cls =>
@@ -290,8 +273,20 @@ export default function RootLayout({
       return 'Text';
     }
 
-    if (tagName === 'div' && element.children.length === 0 && element.textContent && element.textContent.trim()) {
-      return 'Text';
+    if (tagName === 'div') {
+      const hasDirectText = Array.from(element.childNodes).some(node => 
+        node.nodeType === Node.TEXT_NODE && node.textContent && node.textContent.trim().length > 0
+      );
+      
+      if (hasDirectText && !element.querySelector('div, section, article, main, header, footer')) {
+        return 'Text';
+      }
+      
+      return 'Div';
+    }
+
+    if (tagName === 'article') {
+      return 'Article';
     }
 
     if (tagName === 'a' && !element.getAttribute('href')) {
@@ -317,13 +312,13 @@ export default function RootLayout({
     }
     
     if (url.includes('.webildsbx.cc/')) {
-    try {
-      const urlObj = new URL(url);
-      return urlObj.pathname;
-    } catch (e) {
-      return url;
+      try {
+        const urlObj = new URL(url);
+        return urlObj.pathname;
+      } catch (e) {
+        return url;
+      }
     }
-  }
 
     return url;
   };
@@ -374,7 +369,7 @@ export default function RootLayout({
     const computedStyle = window.getComputedStyle(element);
     const backgroundImage = computedStyle.backgroundImage;
     if (backgroundImage && backgroundImage !== 'none') {
-      const urlMatch = backgroundImage.match(/url\(['"]?([^'")]+)['"]?\)/);
+      const urlMatch = backgroundImage.match(/url(['"]?([^'")]+)['"]?)/);
       if (urlMatch) {
         const originalBgSrc = extractOriginalUrl(urlMatch[1]);
         if (tagName !== 'img') {
@@ -416,32 +411,69 @@ export default function RootLayout({
   const isValidElement = (element) => {
     if (!isActive) return false;
     const tagName = element.tagName?.toLowerCase();
-    return !invalidElements.includes(tagName);
+    if (invalidElements.includes(tagName)) return false;
+    const isImage = tagName === 'img';
+    if (isImage) return true;
+    const hasInnerHTML = element.innerHTML && element.innerHTML.trim().length > 0;
+    const hasTextContent = element.textContent && element.textContent.trim().length > 0;
+    const hasChildren = element.children && element.children.length > 0;
+    if (!hasInnerHTML && !hasTextContent && !hasChildren) {
+      return false;
+    }
+    const hasBackgroundImage = window.getComputedStyle(element).backgroundImage !== 'none';
+    if (hasBackgroundImage && !hasChildren && !hasTextContent) {
+      return false;
+    }
+    
+    return true;
   };
 
   const getMostSpecificElement = (x, y) => {
     const elements = document.elementsFromPoint(x, y);
-
     const validElements = elements.filter(el =>
       isValidElement(el) &&
       !el.classList.contains('webild-hover-overlay') &&
-      !el.classList.contains('webild-element-type-label') &&
-      !el.classList.contains('webild-selected-category-label')
+      !el.classList.contains('webild-element-type-label')
     );
 
     if (validElements.length === 0) return null;
-
-    for (const element of validElements) {
-      const hasDirectContent = element.textContent && element.textContent.trim();
-      const hasImages = element.tagName === 'IMG' || element.querySelector('img');
-      const isInteractive = ['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA'].includes(element.tagName);
-
-      if (isInteractive || hasImages || (hasDirectContent && element.children.length <= 2)) {
-        return element;
+    const scoredElements = validElements.map(element => {
+      let score = 0;
+      const rect = element.getBoundingClientRect();
+      const tagName = element.tagName.toLowerCase();
+      const computedStyle = window.getComputedStyle(element);
+      let depth = 0;
+      let current = element;
+      while (current && current !== document.body) {
+        depth++;
+        current = current.parentElement;
       }
-    }
+      score += depth * 2;
+      const hasDirectText = Array.from(element.childNodes).some(node => 
+        node.nodeType === Node.TEXT_NODE && node.textContent && node.textContent.trim().length > 0
+      );
 
-    return validElements[0];
+      const hasImages = element.tagName === 'IMG' || computedStyle.backgroundImage !== 'none' || element.querySelector('img');
+      const isInteractive = ['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA'].includes(element.tagName);
+      const hasFewChildren = element.children.length <= 3;
+      const area = rect.width * rect.height;
+      const viewportArea = window.innerWidth * window.innerHeight;
+      const isSmallElement = area < viewportArea * 0.1;
+      if (hasDirectText) score += 20;
+      if (hasImages) score += 15;
+      if (isInteractive) score += 25;
+      if (hasFewChildren) score += 10;
+      if (isSmallElement) score += 5;
+      if (area > viewportArea * 0.3) score -= 30;
+      if (element.hasAttribute('data-section')) score -= 15;
+      if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tagName)) score += 20;
+      if (['p', 'span', 'label'].includes(tagName)) score += 15;
+      if (tagName === 'div' && !hasDirectText && element.children.length > 2) score -= 10;
+
+      return { element, score };
+    });
+    scoredElements.sort((a, b) => b.score - a.score);
+    return scoredElements[0]?.element || validElements[0];
   };
 
   const isTextElement = (element) => {
@@ -560,7 +592,6 @@ export default function RootLayout({
       width: \${rect.width + 4}px !important;
       height: \${rect.height + 4}px !important;
       background-color: rgba(90, 113, 230, 0.15) !important;
-      border-radius: 4px !important;
       pointer-events: none !important;
       z-index: 999998 !important;
       transition: all 0.15s ease !important;
@@ -578,47 +609,66 @@ export default function RootLayout({
   
   const showElementTypeLabel = (element, elementType) => {
     if (!elementType) return;
-    
+
     removeElementTypeLabel();
-    
+
     const rect = element.getBoundingClientRect();
     elementTypeLabel = document.createElement('div');
     elementTypeLabel.className = 'webild-element-type-label';
-    elementTypeLabel.textContent = elementType;
-    elementTypeLabel.style.cssText = \`
-      left: \${rect.left}px;
-      top: \${rect.top - 32}px;
-    \`;
+    const ariaLabel = element.getAttribute('aria-label');
+    let labelText;
     
-    if (rect.top < 40) {
-      elementTypeLabel.style.top = \`\${rect.bottom + 4}px\`;
+    if (elementType === 'Div') {
+      labelText = 'Div';
+    } else if (elementType === 'Article') {
+      labelText = 'Article';
+    } else if (elementType === 'Section') {
+      labelText = ariaLabel || 'Section';
+    } else {
+      labelText = elementType;
     }
     
+    elementTypeLabel.textContent = labelText;
     document.body.appendChild(elementTypeLabel);
+    const labelRect = elementTypeLabel.getBoundingClientRect();
+    let labelTop = rect.top - labelRect.height - 2;
+    let labelLeft = rect.left - 3;
+    let isLabelOnTop = true;
+    if (labelTop < 0) {
+      labelTop = rect.bottom + 1;
+      isLabelOnTop = false;
+    }
+    if (labelTop + labelRect.height > window.innerHeight) {
+      labelTop = rect.bottom - labelRect.height;
+      isLabelOnTop = false;
+      if (labelTop < 0) {
+        labelTop = rect.top;
+        isLabelOnTop = true;
+      }
+    }
+    if (labelLeft + labelRect.width > window.innerWidth) {
+      labelLeft = window.innerWidth - labelRect.width;
+    }
+    if (labelLeft < 0) {
+      labelLeft = 0;
+    }
+    if (isLabelOnTop) {
+      elementTypeLabel.classList.add('label-top');
+    } else {
+      elementTypeLabel.classList.add('label-bottom');
+    }
+
+    elementTypeLabel.style.cssText = \`
+      left: \${labelLeft}px !important;
+      top: \${labelTop}px !important;
+      transform: none !important;
+    \`;
   };
   
   const removeElementTypeLabel = () => {
     if (elementTypeLabel) {
       elementTypeLabel.remove();
       elementTypeLabel = null;
-    }
-  };
-  
-  const showSelectedCategoryLabel = (elementType) => {
-    removeSelectedCategoryLabel();
-    // Removed the "Editing: {element}" label as per user request
-    // if (!elementType) return;
-    //
-    // selectedCategoryLabel = document.createElement('div');
-    // selectedCategoryLabel.className = 'webild-selected-category-label';
-    // selectedCategoryLabel.textContent = \`Editing: \${elementType}\`;
-    // document.body.appendChild(selectedCategoryLabel);
-  };
-  
-  const removeSelectedCategoryLabel = () => {
-    if (selectedCategoryLabel) {
-      selectedCategoryLabel.remove();
-      selectedCategoryLabel = null;
     }
   };
   
@@ -690,18 +740,18 @@ export default function RootLayout({
   };
   
   const handleClick = (e) => {
-    if (!isActive) return;
+  if (!isActive) return;
 
-    if (isEditing) {
-      e.stopPropagation();
-      return;
-    }
-
-    e.preventDefault();
+  if (isEditing) {
     e.stopPropagation();
+    return;
+  }
 
-    const target = getMostSpecificElement(e.clientX, e.clientY) || e.target;
-    if (!isValidElement(target)) return;
+  e.preventDefault();
+  e.stopPropagation();
+
+  const target = getMostSpecificElement(e.clientX, e.clientY) || e.target;  
+  if (!isValidElement(target)) return;
     
     if (selectedElement && selectedElement !== target) {
       makeUneditable(selectedElement, false);
@@ -714,7 +764,7 @@ export default function RootLayout({
       }
       
       removeHoverOverlay();
-      removeSelectedCategoryLabel();
+      removeElementTypeLabel();
     }
     
     if (selectedElement === target) {
@@ -724,7 +774,7 @@ export default function RootLayout({
       }
       
       removeHoverOverlay();
-      removeSelectedCategoryLabel();
+      removeElementTypeLabel();
       
       selectedElement = null;
       window.parent.postMessage({
@@ -747,7 +797,7 @@ export default function RootLayout({
     
     const elementInfo = getElementInfo(target, true);
     selectedElement.dataset.webildSelector = elementInfo.selector;
-    showSelectedCategoryLabel(elementInfo.elementType);
+    showElementTypeLabel(target, elementInfo.elementType);
     
     window.parent.postMessage({
       type: 'webild-element-selected',
@@ -781,8 +831,38 @@ export default function RootLayout({
   
   const handleScroll = () => {
     if (!isActive) return;
+    if (selectedElement) {
+      makeUneditable(selectedElement, false);
+      selectedElement.classList.remove(selectedClass);
+      if (selectedElement.dataset.webildOriginalPosition) {
+        selectedElement.style.position = selectedElement.dataset.webildOriginalPosition === 'none' ? '' : selectedElement.dataset.webildOriginalPosition;
+        delete selectedElement.dataset.webildOriginalPosition;
+      }
+      selectedElement = null;
+      
+      window.parent.postMessage({
+        type: 'webild-element-selected',
+        data: null
+      }, '*');
+    }
+    
+    if (hoveredElement) {
+      hoveredElement.classList.remove(hoverClass);
+      if (hoveredElement.dataset.webildOriginalPosition) {
+        hoveredElement.style.position = hoveredElement.dataset.webildOriginalPosition === 'none' ? '' : hoveredElement.dataset.webildOriginalPosition;
+        delete hoveredElement.dataset.webildOriginalPosition;
+      }
+      hoveredElement = null;
+      
+      window.parent.postMessage({
+        type: 'webild-element-hover',
+        data: null
+      }, '*');
+    }
     
     removeHoverOverlay();
+    removeElementTypeLabel();
+    
     isScrolling = true;
     
     if (scrollTimeout) {
@@ -791,9 +871,6 @@ export default function RootLayout({
     
     scrollTimeout = setTimeout(() => {
       isScrolling = false;
-      if (hoveredElement && (!selectedElement || selectedElement !== hoveredElement)) {
-        hoverOverlay = createHoverOverlay(hoveredElement);
-      }
     }, 150);
     
     window.parent.postMessage({
@@ -868,7 +945,6 @@ export default function RootLayout({
 
         removeHoverOverlay();
         removeElementTypeLabel();
-        removeSelectedCategoryLabel();
         window.parent.postMessage({ type: 'webild-editor-deactivated' }, '*');
       }
       return;
@@ -881,28 +957,22 @@ export default function RootLayout({
 
     if (e.data.type === 'webild-update-text') {
       const { selector, newValue, oldValue, sectionId } = e.data.data;
-      console.log('[Webild] Text update request:', { selector, newValue, oldValue, sectionId });
-      
       try {
         let element = null;
         
         if (selector) {
           element = document.querySelector(selector);
-          console.log('[Webild] Found element by selector:', element);
         }
         
         if (!element && selectedElement && isTextElement(selectedElement)) {
-          console.log('[Webild] Selector not found. Using currently selected element');
           element = selectedElement;
           const newSelector = getUniqueSelector(element, true);
           if (newSelector) {
-            console.log('[Webild] Assigned new selector to selected element:', newSelector);
             selectedElement.dataset.webildSelector = newSelector;
           }
         }
         
         if (!element && oldValue && sectionId) {
-          console.log('[Webild] Trying to find element by text content in section:', sectionId);
           const sectionElement = document.querySelector('[data-section="' + sectionId + '"]');
           if (sectionElement) {
             const textElements = sectionElement.querySelectorAll('h1, h2, h3, h4, h5, h6, p, span, a, button, div');
@@ -910,25 +980,17 @@ export default function RootLayout({
               const el = textElements[i];
               if (isTextElement(el) && el.textContent.trim() === oldValue.trim()) {
                 element = el;
-                console.log('[Webild] Found element by matching text content:', element);
                 const newSelector = getUniqueSelector(element, true);
                 if (newSelector) {
                   element.dataset.webildSelector = newSelector;
-                  console.log('[Webild] Assigned selector to text-matched element:', newSelector);
                 }
                 break;
               }
             }
           }
         }
-        
-        console.log('[Webild] Final element:', element);
-        console.log('[Webild] Is text element:', element ? isTextElement(element) : false);
-        
         if (element && isTextElement(element)) {
-          element.textContent = newValue;
-          console.log('[Webild] Text updated successfully to:', newValue);
-          
+          element.textContent = newValue; 
           window.parent.postMessage({
             type: 'webild-text-update-success',
             data: {
@@ -937,7 +999,6 @@ export default function RootLayout({
             }
           }, '*');
         } else {
-          console.warn('[Webild] Element not found or not a text element', { element, selector });
           window.parent.postMessage({
             type: 'webild-text-update-failed',
             data: { selector, newValue }
@@ -1026,7 +1087,7 @@ export default function RootLayout({
 
           let cleanOldValue = oldValue;
           if (oldValue.includes('url(')) {
-            const urlMatch = oldValue.match(/url\(['"]?([^'")]+)['"]?\)/);
+            const urlMatch = oldValue.match(/url(['"]?([^'")]+)['"]?)/);
             if (urlMatch) {
               cleanOldValue = urlMatch[1];
             }
@@ -1087,7 +1148,6 @@ export default function RootLayout({
     
     removeHoverOverlay();
     removeElementTypeLabel();
-    removeSelectedCategoryLabel();
     
     document.removeEventListener('mouseover', handleMouseOver, true);
     document.removeEventListener('mouseout', handleMouseOut, true);

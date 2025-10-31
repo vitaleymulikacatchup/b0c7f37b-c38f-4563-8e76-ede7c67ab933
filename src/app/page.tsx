@@ -55,7 +55,7 @@ export default function Page() {
               href: "https://demo.aisaas.com"
             }
           ]}
-          imageSrc="https://images.pexels.com/photos/9783346/pexels-photo-9783346.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
+          imageSrc="https://webuild-dev.s3.eu-north-1.amazonaws.com/users/user_32pj8e1GcgiOEWWC6aYveoEdoWX/uploaded-1761944112745-1oxye7oq.png"
           imageAlt="An individual viewing glowing numbers on a screen, symbolizing technology and data."
           imagePosition="right"
         />
